@@ -1,20 +1,53 @@
+ # services:
+ #   web.api:
+ #     image: ${DOCKER_REGISTRY-}webapi
+ #     build:
+ #       context: .
+ #       dockerfile: Web.Api/Dockerfile
+ #     ports:
+ #       - 5000:8080
+ #       - 5001:8081 
+
+ #   local.postgres:
+ #     image: postgres:latest # or latest
+ #     environment:
+ #       POSTGRES_DB: storedb
+ #       POSTGRES_USER: postgres
+ #       POSTGRES_PASSWORD: postgres
+ #     volumes:
+ #       - ./.containers/pgdata:/var/lib/postgresql/data
+ #     ports:
+ #       - 5432:5432
+
+
+version: "3.9"
+
 services:
   web.api:
     image: ${DOCKER_REGISTRY-}webapi
     build:
       context: .
       dockerfile: Web.Api/Dockerfile
-    ports:
-      - 5000:8080
-      - 5001:8081 
-
-  local.postgres:
-    image: postgres:latest # or latest
+    depends_on:
+      - local.sqlserver
     environment:
-      POSTGRES_DB: storedb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - ./.containers/pgdata:/var/lib/postgresql/data
+      # Optional: override conn string from env instead of appsettings
+      # ConnectionStrings__Database: "Server=local.sqlserver,1433;Database=storedb;User Id=sa;Password=Your_strong_Password123;Encrypt=False;TrustServerCertificate=True;"
+      ASPNETCORE_ENVIRONMENT: Development
     ports:
-      - 5432:5432
+      - "5000:8080"
+      - "5001:8081"
+
+  local.sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: local.sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Your_strong_Password123"   # must be strong: 8+ chars, upper, lower, number, symbol
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - ./.containers/mssql:/var/opt/mssql
+
+
