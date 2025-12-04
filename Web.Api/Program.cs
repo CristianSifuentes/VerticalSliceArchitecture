@@ -4,8 +4,11 @@ using Web.Api.Extensions;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.AddApiServices()
-       .AddDatabase();
+builder.AddAuthorization()
+       .AddApiServices()
+       .AddDatabase()
+       .AddApplicationServices()
+       .AddErrorHandling();
 
 WebApplication app = builder.Build();
 
@@ -14,8 +17,16 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 
     await app.ApplyMigrationsAsync();
+
+    await app.SeedInitialDataAsync();
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
+
+app.MapEndpoints();
 
 await app.RunAsync();
